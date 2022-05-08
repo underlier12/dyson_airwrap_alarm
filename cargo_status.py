@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 import requests
 
@@ -27,7 +28,7 @@ class CargoStatus:
         alert_candidate = []
         for card in card_list:
             card_id = card['id']
-            card_action_open = card.find('div', {'class': 'card__action'})
+            card_action_open = card.find('button', {'class': 'card__addtocart'})
             card_action_close = card.find('div', {'class': 'card__action__items'})
 
             if card_action_open != None:
@@ -42,7 +43,7 @@ class CargoStatus:
 
     def _compare_open(self, card_id, card_action_open):
         try:
-            card_action_text = card_action_open.div.form.button.span.text
+            card_action_text = card_action_open.span.text
         except:
             return "Error - transforming card action text at open"
         
@@ -62,6 +63,11 @@ class CargoStatus:
                 self.inventory[card_id] = "Close"
                 return f"{self.CODE_TABLE[card_id]} - Close"
 
+    def _print_internal_log(self, alert_candidate):
+        alert_set = set(alert_candidate)
+        if len(alert_set) > 1:
+            print(f"{datetime.now()} - {alert_set}")
+
     def check_inventory(self):
         res = requests.get(self.URL)
         if res.status_code == 200:
@@ -69,5 +75,5 @@ class CargoStatus:
             soup = BeautifulSoup(html, 'html.parser')
             card_list = soup.select('.slider__item')
             alert_candidate = self._extract_info(card_list)
-            print(alert_candidate)
+            self._print_internal_log(alert_candidate)
             return alert_candidate
